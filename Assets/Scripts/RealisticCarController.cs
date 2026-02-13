@@ -26,6 +26,9 @@ public class RealisticCarController : MonoBehaviour
     private float _currentSteerAngle;
     private float _currentAcceleration;
     private float _currentBrakeForce;
+    private int _currentGear = 1;
+    private float _currentRPM = 1000f;
+    private float _lastShiftTime = 0f;
     private Quaternion _frontLeftRotOffset;
     private Quaternion _frontRightRotOffset;
     private Quaternion _rearLeftRotOffset;
@@ -40,6 +43,7 @@ public class RealisticCarController : MonoBehaviour
         _rb = GetComponent<Rigidbody>();
         ApplyCarData();
         CacheWheelOffsets();
+        _lastShiftTime = Time.time;
     }
 
     private void CacheWheelOffsets()
@@ -112,6 +116,7 @@ public class RealisticCarController : MonoBehaviour
         HandleMotor();
         HandleSteering();
         ApplyDownforce();
+        ApplyTireLoadSensitivity();
         // Anti-roll disabled - was causing car to fly
         // ApplyAntiRoll(frontLeftCollider, frontRightCollider);
         // ApplyAntiRoll(rearLeftCollider, rearRightCollider);
@@ -120,36 +125,114 @@ public class RealisticCarController : MonoBehaviour
 
     private void HandleMotor()
     {
-        // ... (Same motor logic as previous script) ...
         float moveInput = Input.GetAxis("Vertical");
         float currentSpeed = _rb.linearVelocity.magnitude * 3.6f;
 
-        if (currentSpeed < carData.maxSpeed)
+        // Calculate RPM based on vehicle speed (more stable than wheel RPM)
+        float speedMps = _rb.linearVelocity.magnitude;
+        float wheelRPM = (speedMps / (2f * Mathf.PI * carData.wheelRadius)) * 60f;
+        float gearRatio = GetCurrentGearRatio();
+        _currentRPM = Mathf.Abs(wheelRPM * gearRatio * carData.finalDriveRatio);
+        _currentRPM = Mathf.Clamp(_currentRPM, carData.minRPM, carData.maxRPM);
+
+        // Auto shift
+        HandleAutoShift();
+
+        // Calculate torque with curve
+        float torqueMultiplier = GetTorqueMultiplier(_currentRPM);
+        
+        if (currentSpeed < carData.maxSpeed && moveInput > 0.01f)
         {
-            _currentAcceleration = moveInput * carData.maxMotorTorque;
-            if (currentSpeed < carData.lowSpeedTorqueKph)
-            {
-                _currentAcceleration *= carData.lowSpeedTorqueMultiplier;
-            }
+            _currentAcceleration = moveInput * carData.maxMotorTorque * torqueMultiplier;
         }
         else
         {
             _currentAcceleration = 0;
         }
 
-        _currentBrakeForce = Input.GetKey(KeyCode.Space) ? carData.brakePower : 0f;
+        // Brake input (space) and handbrake (left shift)
+        bool isBraking = Input.GetKey(KeyCode.Space);
+        bool isHandbrake = Input.GetKey(KeyCode.LeftShift);
+        
+        _currentBrakeForce = isBraking ? carData.brakePower : 0f;
+        
+        // Engine braking when off throttle
+        float engineBrake = 0f;
+        if (moveInput < 0.01f && currentSpeed > 1f && !isBraking)
+        {
+            engineBrake = carData.engineBrakePower;
+        }
 
-        float rearTorque = _currentBrakeForce > 0f ? 0f : _currentAcceleration;
+        // Cut motor torque when handbrake is active
+        float rearTorque = (_currentBrakeForce > 0f || isHandbrake) ? 0f : _currentAcceleration;
         rearTorque = ApplyTractionControl(rearLeftCollider, rearTorque, currentSpeed);
         rearTorque = ApplyTractionControl(rearRightCollider, rearTorque, currentSpeed);
 
-        rearLeftCollider.motorTorque = rearTorque;
-        rearRightCollider.motorTorque = rearTorque;
+        // Apply differential to distribute torque between rear wheels
+        float leftTorque = rearTorque;
+        float rightTorque = rearTorque;
         
-        frontLeftCollider.brakeTorque = _currentBrakeForce;
-        frontRightCollider.brakeTorque = _currentBrakeForce;
-        rearLeftCollider.brakeTorque = _currentBrakeForce;
-        rearRightCollider.brakeTorque = _currentBrakeForce;
+        if (carData.differentialLockRatio < 1f && Mathf.Abs(rearTorque) > 0.1f)
+        {
+            float leftRPM = rearLeftCollider.rpm;
+            float rightRPM = rearRightCollider.rpm;
+            float rpmDiff = Mathf.Abs(leftRPM - rightRPM);
+            
+            if (rpmDiff > carData.differentialSlipThreshold)
+            {
+                // Limited slip: slower wheel gets more torque
+                float slipFactor = Mathf.Clamp01(rpmDiff / 200f);
+                float torqueShift = rearTorque * (1f - carData.differentialLockRatio) * slipFactor * 0.3f;
+                
+                if (leftRPM > rightRPM)
+                {
+                    // Left spinning faster, give more to right
+                    leftTorque -= torqueShift;
+                    rightTorque += torqueShift;
+                }
+                else
+                {
+                    // Right spinning faster, give more to left
+                    leftTorque += torqueShift;
+                    rightTorque -= torqueShift;
+                }
+            }
+        }
+
+        rearLeftCollider.motorTorque = leftTorque;
+        rearRightCollider.motorTorque = rightTorque;
+        
+        float frontBrake = (_currentBrakeForce * carData.brakeFrontBias) + engineBrake;
+        float rearBrake = (_currentBrakeForce * (1f - carData.brakeFrontBias)) + engineBrake;
+        
+        // Handbrake only on rear wheels - reduce sideways friction for drift
+        if (isHandbrake)
+        {
+            rearBrake += carData.handBrakePower;
+            
+            // Reduce rear sideways friction during handbrake for easier sliding
+            WheelFrictionCurve rearLeftSideways = rearLeftCollider.sidewaysFriction;
+            WheelFrictionCurve rearRightSideways = rearRightCollider.sidewaysFriction;
+            rearLeftSideways.stiffness = carData.sidewaysFrictionStiffness * 0.3f;
+            rearRightSideways.stiffness = carData.sidewaysFrictionStiffness * 0.3f;
+            rearLeftCollider.sidewaysFriction = rearLeftSideways;
+            rearRightCollider.sidewaysFriction = rearRightSideways;
+        }
+        else
+        {
+            // Restore friction when handbrake released
+            WheelFrictionCurve rearLeftSideways = rearLeftCollider.sidewaysFriction;
+            WheelFrictionCurve rearRightSideways = rearRightCollider.sidewaysFriction;
+            rearLeftSideways.stiffness = carData.sidewaysFrictionStiffness;
+            rearRightSideways.stiffness = carData.sidewaysFrictionStiffness;
+            rearLeftCollider.sidewaysFriction = rearLeftSideways;
+            rearRightCollider.sidewaysFriction = rearRightSideways;
+        }
+        
+        frontLeftCollider.brakeTorque = frontBrake;
+        frontRightCollider.brakeTorque = frontBrake;
+        rearLeftCollider.brakeTorque = rearBrake;
+        rearRightCollider.brakeTorque = rearBrake;
     }
 
     private void HandleSteering()
@@ -284,5 +367,110 @@ public class RealisticCarController : MonoBehaviour
         if (bone == rearLeftBone) return _rearLeftPosOffset;
         if (bone == rearRightBone) return _rearRightPosOffset;
         return Vector3.zero;
+    }
+
+    private float GetCurrentGearRatio()
+    {
+        if (carData == null || carData.gearRatios == null || carData.gearRatios.Length == 0)
+        {
+            return 1f;
+        }
+        
+        int gearIndex = Mathf.Clamp(_currentGear - 1, 0, carData.gearRatios.Length - 1);
+        return carData.gearRatios[gearIndex];
+    }
+
+    private void HandleAutoShift()
+    {
+        if (carData == null) return;
+
+        float timeSinceLastShift = Time.time - _lastShiftTime;
+        
+        // Require 0.7 second delay between shifts to prevent rapid cycling
+        if (timeSinceLastShift < 0.7f) return;
+
+        // Shift up with hysteresis
+        if (_currentRPM >= carData.shiftUpRPM && _currentGear < carData.gearCount)
+        {
+            _currentGear++;
+            _lastShiftTime = Time.time;
+        }
+        // Shift down - only if RPM is very low to prevent cycling
+        else if (_currentRPM <= carData.shiftDownRPM && _currentGear > 1)
+        {
+            _currentGear--;
+            _lastShiftTime = Time.time;
+        }
+    }
+
+    private float GetTorqueMultiplier(float rpm)
+    {
+        if (carData == null) return 1f;
+        
+        // Normalize RPM to 0-1 range
+        float normalizedRPM = Mathf.InverseLerp(carData.minRPM, carData.maxRPM, rpm);
+        
+        // Evaluate torque curve
+        return carData.torqueCurve.Evaluate(normalizedRPM);
+    }
+
+    public int GetCurrentGear()
+    {
+        return _currentGear;
+    }
+
+    public float GetCurrentRPM()
+    {
+        return _currentRPM;
+    }
+
+    private void ApplyTireLoadSensitivity()
+    {
+        if (carData == null || !carData.enableLoadSensitivity) return;
+
+        ApplyLoadToWheel(frontLeftCollider);
+        ApplyLoadToWheel(frontRightCollider);
+        ApplyLoadToWheel(rearLeftCollider);
+        ApplyLoadToWheel(rearRightCollider);
+    }
+
+    private void ApplyLoadToWheel(WheelCollider wheel)
+    {
+        if (wheel == null) return;
+
+        WheelHit hit;
+        if (wheel.GetGroundHit(out hit))
+        {
+            // Calculate load on this wheel from suspension force
+            float suspensionForce = hit.force;
+            
+            // Calculate grip multiplier based on load vs optimal load
+            float loadRatio = suspensionForce / carData.optimalLoad;
+            float gripMultiplier = 1f;
+            
+            if (loadRatio < 1f)
+            {
+                // Under optimal load: linear increase
+                gripMultiplier = Mathf.Lerp(0.7f, 1f, loadRatio);
+            }
+            else
+            {
+                // Over optimal load: slight decrease (tire saturation)
+                gripMultiplier = Mathf.Lerp(1f, 0.9f, Mathf.Clamp01((loadRatio - 1f) * 0.5f));
+            }
+            
+            // Apply sensitivity factor
+            gripMultiplier = Mathf.Lerp(1f, gripMultiplier, carData.loadSensitivityFactor);
+            
+            // Modify friction curves
+            WheelFrictionCurve forward = wheel.forwardFriction;
+            WheelFrictionCurve sideways = wheel.sidewaysFriction;
+            
+            forward.stiffness = carData.forwardFrictionStiffness * gripMultiplier;
+            sideways.stiffness = carData.sidewaysFrictionStiffness * gripMultiplier;
+            
+            wheel.forwardFriction = forward;
+            wheel.sidewaysFriction = sideways;
+        }
     }
 }

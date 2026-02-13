@@ -77,14 +77,21 @@ public class SpeedometerUI : MonoBehaviour
     {
         if (gearText == null) return;
 
-        if (speed < neutralSpeedThreshold)
+        if (carController != null)
+        {
+            // Use actual gear from controller if available
+            int gear = carController.GetCurrentGear();
+            gearText.text = gear.ToString();
+        }
+        else if (speed < neutralSpeedThreshold)
         {
             gearText.text = "N";
-            return;
         }
-
-        int gear = CalculateGear(speed);
-        gearText.text = gear.ToString();
+        else
+        {
+            int gear = CalculateGear(speed);
+            gearText.text = gear.ToString();
+        }
     }
 
     private int CalculateGear(float speed)

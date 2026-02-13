@@ -12,23 +12,79 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9681737e78158ed4a82636e0f9b7c7aa, type: 3}
   m_Name: Charger_Data
   m_EditorClassIdentifier: Assembly-CSharp::CarData
-  maxMotorTorque: 1200
+  maxMotorTorque: 1600
   maxSpeed: 235
   brakePower: 2500
-  lowSpeedTorqueMultiplier: 2
-  lowSpeedTorqueKph: 40
+  brakeFrontBias: 0.68
+  engineBrakePower: 350
+  handBrakePower: 4500
+  minRPM: 1000
+  maxRPM: 6800
+  peakTorqueRPM: 4200
+  torqueCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0.55
+      inSlope: 1.2
+      outSlope: 1.2
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0.33
+    - serializedVersion: 3
+      time: 0.65
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33
+      outWeight: 0.33
+    - serializedVersion: 3
+      time: 1
+      value: 0.75
+      inSlope: -0.8
+      outSlope: -0.8
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  gearCount: 6
+  gearRatios:
+  - 4.2
+  - 2.8
+  - 2.0
+  - 1.5
+  - 1.15
+  - 0.95
+  finalDriveRatio: 3.4
+  shiftUpRPM: 6200
+  shiftDownRPM: 2000
   maxSteeringAngle: 28
-  tractionControl: 0.7
+  tractionControl: 0.65
   tractionControlMinKph: 15
+  wheelRadius: 0.34
+  tractionControlMinKph: 15
+  wheelRadius: 0.34
+  differentialLockRatio: 0.45
+  differentialSlipThreshold: 60
+  enableLoadSensitivity: 1
+  loadSensitivityFactor: 0.5
+  optimalLoad: 4500
   steerAtMaxSpeed: 0.75
   useSpeedSensitiveSteering: 1
   minSteerScale: 0.7
   downforce: 120
   antiRollStiffness: 0
-  forwardFrictionStiffness: 1.4
-  sidewaysFrictionStiffness: 1.8
+  forwardFrictionStiffness: 1.5
+  sidewaysFrictionStiffness: 2.0
   suspensionDistance: 0.2
   suspensionSpring: 35000
-  suspensionDamper: 4000
+  suspensionDamper: 4500
   mass: 1850
   centerOfMassOffset: {x: 0, y: -0.3, z: 0}
