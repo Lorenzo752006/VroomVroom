@@ -71,10 +71,10 @@ MonoBehaviour:
   wheelRadius: 0.34
   tractionControlMinKph: 15
   wheelRadius: 0.34
-  differentialLockRatio: 0.45
-  differentialSlipThreshold: 60
+  differentialLockRatio: 0.5
+  differentialSlipThreshold: 80
   enableLoadSensitivity: 1
-  loadSensitivityFactor: 0.5
+  loadSensitivityFactor: 0.3
   optimalLoad: 4500
   steerAtMaxSpeed: 0.75
   useSpeedSensitiveSteering: 1

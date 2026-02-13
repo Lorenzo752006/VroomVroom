@@ -104,10 +104,18 @@ public class RealisticCarController : MonoBehaviour
 
         WheelFrictionCurve forward = wheel.forwardFriction;
         forward.stiffness = carData.forwardFrictionStiffness;
+        forward.extremumSlip = 0.4f;
+        forward.extremumValue = 1.0f;
+        forward.asymptoteSlip = 0.8f;
+        forward.asymptoteValue = 0.5f;
         wheel.forwardFriction = forward;
 
         WheelFrictionCurve sideways = wheel.sidewaysFriction;
         sideways.stiffness = carData.sidewaysFrictionStiffness;
+        sideways.extremumSlip = 0.3f;
+        sideways.extremumValue = 1.0f;
+        sideways.asymptoteSlip = 0.6f;
+        sideways.asymptoteValue = 0.75f;
         wheel.sidewaysFriction = sideways;
     }
 
@@ -238,6 +246,7 @@ public class RealisticCarController : MonoBehaviour
     private void HandleSteering()
     {
         float steerInput = Input.GetAxis("Horizontal");
+        
         float steerScale = 1f;
         if (carData.useSpeedSensitiveSteering)
         {
