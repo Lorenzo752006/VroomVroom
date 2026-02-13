@@ -26,11 +26,45 @@ public class RealisticCarController : MonoBehaviour
     private float _currentSteerAngle;
     private float _currentAcceleration;
     private float _currentBrakeForce;
+    private Quaternion _frontLeftRotOffset;
+    private Quaternion _frontRightRotOffset;
+    private Quaternion _rearLeftRotOffset;
+    private Quaternion _rearRightRotOffset;
+    private Vector3 _frontLeftPosOffset;
+    private Vector3 _frontRightPosOffset;
+    private Vector3 _rearLeftPosOffset;
+    private Vector3 _rearRightPosOffset;
 
     private void Start()
     {
         _rb = GetComponent<Rigidbody>();
         ApplyCarData();
+        CacheWheelOffsets();
+    }
+
+    private void CacheWheelOffsets()
+    {
+        CacheWheelOffset(frontLeftCollider, frontLeftBone, out _frontLeftRotOffset, out _frontLeftPosOffset);
+        CacheWheelOffset(frontRightCollider, frontRightBone, out _frontRightRotOffset, out _frontRightPosOffset);
+        CacheWheelOffset(rearLeftCollider, rearLeftBone, out _rearLeftRotOffset, out _rearLeftPosOffset);
+        CacheWheelOffset(rearRightCollider, rearRightBone, out _rearRightRotOffset, out _rearRightPosOffset);
+    }
+
+    private void CacheWheelOffset(WheelCollider collider, Transform bone, out Quaternion rotOffset, out Vector3 posOffset)
+    {
+        rotOffset = Quaternion.identity;
+        posOffset = Vector3.zero;
+
+        if (collider == null || bone == null)
+        {
+            return;
+        }
+
+        Vector3 pos;
+        Quaternion rot;
+        collider.GetWorldPose(out pos, out rot);
+        rotOffset = bone.rotation * Quaternion.Inverse(rot);
+        posOffset = bone.position - pos;
     }
 
     public void ApplyCarData()
@@ -114,11 +148,28 @@ public class RealisticCarController : MonoBehaviour
         // 1. Get the physics position/rotation
         collider.GetWorldPose(out pos, out rot);
 
-        // 2. Apply position directly (bones handle position well)
-        bone.position = pos;
+        // 2. Apply position with original offset
+        bone.position = pos + GetPositionOffset(bone);
 
-        // 3. Apply rotation WITH the offset adjustment
-        // This takes the physics rotation, and adds your offset on top
-        bone.rotation = rot * Quaternion.Euler(wheelRotationOffset);
+        // 3. Apply rotation with original offset and optional manual tweak
+        bone.rotation = rot * GetRotationOffset(bone) * Quaternion.Euler(wheelRotationOffset);
+    }
+
+    private Quaternion GetRotationOffset(Transform bone)
+    {
+        if (bone == frontLeftBone) return _frontLeftRotOffset;
+        if (bone == frontRightBone) return _frontRightRotOffset;
+        if (bone == rearLeftBone) return _rearLeftRotOffset;
+        if (bone == rearRightBone) return _rearRightRotOffset;
+        return Quaternion.identity;
+    }
+
+    private Vector3 GetPositionOffset(Transform bone)
+    {
+        if (bone == frontLeftBone) return _frontLeftPosOffset;
+        if (bone == frontRightBone) return _frontRightPosOffset;
+        if (bone == rearLeftBone) return _rearLeftPosOffset;
+        if (bone == rearRightBone) return _rearRightPosOffset;
+        return Vector3.zero;
     }
 }
