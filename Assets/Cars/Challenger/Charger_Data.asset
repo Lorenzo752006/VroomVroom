@@ -12,13 +12,23 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9681737e78158ed4a82636e0f9b7c7aa, type: 3}
   m_Name: Charger_Data
   m_EditorClassIdentifier: Assembly-CSharp::CarData
-  maxMotorTorque: 540
+  maxMotorTorque: 1200
   maxSpeed: 235
-  brakePower: 1900
-  maxSteeringAngle: 24
-  tractionControl: 0.25
-  suspensionDistance: 0.16
-  suspensionSpring: 45000
-  suspensionDamper: 12000
+  brakePower: 2500
+  lowSpeedTorqueMultiplier: 2
+  lowSpeedTorqueKph: 40
+  maxSteeringAngle: 28
+  tractionControl: 0.7
+  tractionControlMinKph: 15
+  steerAtMaxSpeed: 0.75
+  useSpeedSensitiveSteering: 1
+  minSteerScale: 0.7
+  downforce: 120
+  antiRollStiffness: 0
+  forwardFrictionStiffness: 1.4
+  sidewaysFrictionStiffness: 1.8
+  suspensionDistance: 0.2
+  suspensionSpring: 35000
+  suspensionDamper: 4000
   mass: 1850
-  centerOfMassOffset: {x: 0, y: -1, z: 0}
+  centerOfMassOffset: {x: 0, y: -0.3, z: 0}

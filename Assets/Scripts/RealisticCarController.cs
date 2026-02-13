@@ -78,6 +78,11 @@ public class RealisticCarController : MonoBehaviour
         UpdateWheelSuspension(frontRightCollider);
         UpdateWheelSuspension(rearLeftCollider);
         UpdateWheelSuspension(rearRightCollider);
+
+        ApplyWheelFriction(frontLeftCollider);
+        ApplyWheelFriction(frontRightCollider);
+        ApplyWheelFriction(rearLeftCollider);
+        ApplyWheelFriction(rearRightCollider);
     }
 
     private void UpdateWheelSuspension(WheelCollider wheel)
@@ -89,10 +94,27 @@ public class RealisticCarController : MonoBehaviour
         wheel.suspensionDistance = carData.suspensionDistance;
     }
 
+    private void ApplyWheelFriction(WheelCollider wheel)
+    {
+        if (wheel == null) return;
+
+        WheelFrictionCurve forward = wheel.forwardFriction;
+        forward.stiffness = carData.forwardFrictionStiffness;
+        wheel.forwardFriction = forward;
+
+        WheelFrictionCurve sideways = wheel.sidewaysFriction;
+        sideways.stiffness = carData.sidewaysFrictionStiffness;
+        wheel.sidewaysFriction = sideways;
+    }
+
     private void FixedUpdate()
     {
         HandleMotor();
         HandleSteering();
+        ApplyDownforce();
+        // Anti-roll disabled - was causing car to fly
+        // ApplyAntiRoll(frontLeftCollider, frontRightCollider);
+        // ApplyAntiRoll(rearLeftCollider, rearRightCollider);
         UpdateWheels();
     }
 
@@ -105,16 +127,24 @@ public class RealisticCarController : MonoBehaviour
         if (currentSpeed < carData.maxSpeed)
         {
             _currentAcceleration = moveInput * carData.maxMotorTorque;
+            if (currentSpeed < carData.lowSpeedTorqueKph)
+            {
+                _currentAcceleration *= carData.lowSpeedTorqueMultiplier;
+            }
         }
         else
         {
             _currentAcceleration = 0;
         }
 
-        rearLeftCollider.motorTorque = _currentAcceleration;
-        rearRightCollider.motorTorque = _currentAcceleration;
-
         _currentBrakeForce = Input.GetKey(KeyCode.Space) ? carData.brakePower : 0f;
+
+        float rearTorque = _currentBrakeForce > 0f ? 0f : _currentAcceleration;
+        rearTorque = ApplyTractionControl(rearLeftCollider, rearTorque, currentSpeed);
+        rearTorque = ApplyTractionControl(rearRightCollider, rearTorque, currentSpeed);
+
+        rearLeftCollider.motorTorque = rearTorque;
+        rearRightCollider.motorTorque = rearTorque;
         
         frontLeftCollider.brakeTorque = _currentBrakeForce;
         frontRightCollider.brakeTorque = _currentBrakeForce;
@@ -125,7 +155,16 @@ public class RealisticCarController : MonoBehaviour
     private void HandleSteering()
     {
         float steerInput = Input.GetAxis("Horizontal");
-        _currentSteerAngle = carData.maxSteeringAngle * steerInput;
+        float steerScale = 1f;
+        if (carData.useSpeedSensitiveSteering)
+        {
+            float speedKmh = _rb.linearVelocity.magnitude * 3.6f;
+            float speedFactor = Mathf.InverseLerp(0f, carData.maxSpeed, speedKmh);
+            steerScale = Mathf.Lerp(1f, Mathf.Clamp01(carData.steerAtMaxSpeed), speedFactor);
+            steerScale = Mathf.Max(steerScale, Mathf.Clamp01(carData.minSteerScale));
+        }
+
+        _currentSteerAngle = carData.maxSteeringAngle * steerInput * steerScale;
 
         frontLeftCollider.steerAngle = _currentSteerAngle;
         frontRightCollider.steerAngle = _currentSteerAngle;
@@ -153,6 +192,80 @@ public class RealisticCarController : MonoBehaviour
 
         // 3. Apply rotation with original offset and optional manual tweak
         bone.rotation = rot * GetRotationOffset(bone) * Quaternion.Euler(wheelRotationOffset);
+    }
+
+    private float ApplyTractionControl(WheelCollider wheel, float torque, float speedKmh)
+    {
+        if (wheel == null || carData == null || carData.tractionControl <= 0f)
+        {
+            return torque;
+        }
+
+        if (speedKmh < carData.tractionControlMinKph)
+        {
+            return torque;
+        }
+
+        WheelHit hit;
+        if (wheel.GetGroundHit(out hit))
+        {
+            float slip = Mathf.Max(Mathf.Abs(hit.forwardSlip), Mathf.Abs(hit.sidewaysSlip));
+            float slipFactor = Mathf.InverseLerp(0.2f, 0.8f, slip);
+            float tc = Mathf.Clamp01(carData.tractionControl);
+            torque *= Mathf.Lerp(1f, 1f - tc, slipFactor);
+        }
+
+        return torque;
+    }
+
+    private void ApplyDownforce()
+    {
+        if (carData == null || carData.downforce <= 0f)
+        {
+            return;
+        }
+
+        float speed = _rb.linearVelocity.magnitude;
+        float downforceAmount = carData.downforce * speed * speed * 0.01f;
+        _rb.AddForce(-transform.up * downforceAmount, ForceMode.Force);
+    }
+
+    private void ApplyAntiRoll(WheelCollider leftWheel, WheelCollider rightWheel)
+    {
+        if (carData == null || carData.antiRollStiffness <= 0f || leftWheel == null || rightWheel == null)
+        {
+            return;
+        }
+
+        float leftTravel = 1.0f;
+        float rightTravel = 1.0f;
+
+        WheelHit hit;
+        bool leftGrounded = leftWheel.GetGroundHit(out hit);
+        if (leftGrounded)
+        {
+            leftTravel = (-leftWheel.transform.InverseTransformPoint(hit.point).y - leftWheel.radius) /
+                         leftWheel.suspensionDistance;
+            leftTravel = Mathf.Clamp01(leftTravel);
+        }
+
+        bool rightGrounded = rightWheel.GetGroundHit(out hit);
+        if (rightGrounded)
+        {
+            rightTravel = (-rightWheel.transform.InverseTransformPoint(hit.point).y - rightWheel.radius) /
+                          rightWheel.suspensionDistance;
+            rightTravel = Mathf.Clamp01(rightTravel);
+        }
+
+        if (!leftGrounded || !rightGrounded)
+        {
+            return;
+        }
+
+        float antiRollForce = (leftTravel - rightTravel) * carData.antiRollStiffness;
+
+        _rb.AddForceAtPosition(leftWheel.transform.up * -antiRollForce, leftWheel.transform.position);
+        _rb.AddForceAtPosition(rightWheel.transform.up * antiRollForce, rightWheel.transform.position);
     }
 
     private Quaternion GetRotationOffset(Transform bone)
