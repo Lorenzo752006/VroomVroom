@@ -131,8 +131,8 @@ public class CarCameraController : MonoBehaviour
 
         if (!hasInput && recenterDelay >= 0f && (Time.time - _lastInputTime) >= recenterDelay)
         {
-            _yaw = Mathf.SmoothDamp(_yaw, 0f, ref _yawVelocity, recenterSmoothTime);
-            _pitch = Mathf.SmoothDamp(_pitch, 0f, ref _pitchVelocity, recenterSmoothTime);
+            _yaw = Mathf.SmoothDampAngle(_yaw, 0f, ref _yawVelocity, recenterSmoothTime);
+            _pitch = Mathf.SmoothDampAngle(_pitch, 0f, ref _pitchVelocity, recenterSmoothTime);
         }
     }
 
