@@ -1,0 +1,293 @@
+FORZA HORIZON STYLE CAMERA - SETUP GUIDE
+=========================================
+
+Your camera has been upgraded to a full Forza Horizon-style system!
+
+WHAT'S NEW:
+===========
+? Dynamic height - Camera rises smoothly at high speeds
+? Look-ahead - Camera anticipates direction based on velocity
+? Corner tilt - Cinematic banking during turns (just like Forza!)
+? Drift camera - Special FOV and positioning during drifts
+? Speed-based zoom - FOV or distance changes with speed
+? Collision avoidance - Camera won't clip through walls
+? Smooth transitions - All movements use proper damping
+
+SETUP INSTRUCTIONS:
+===================
+
+1. ATTACH TO MAIN CAMERA:
+   - Your CarCameraController should already be on your main camera
+   - If not, add it to your Main Camera GameObject
+
+2. ASSIGN REFERENCES:
+   Target: Drag your Ferrari car (the root GameObject)
+   Target Rigidbody: Drag the Rigidbody component (or leave empty to auto-detect)
+
+3. DEFAULT SETTINGS (Already Configured):
+   All settings have Forza Horizon defaults, but you can customize!
+
+RECOMMENDED SETTINGS:
+=====================
+
+FOLLOW SETTINGS:
+---------------
+Base Offset: (0, 2.5, -7)
+  - X: Side offset (0 = centered)
+  - Y: Height (2.5 = good view)
+  - Z: Distance behind car (-7 = not too far)
+
+Position Smooth Time: 0.12
+  - Lower = more responsive (0.05-0.15)
+  - Higher = smoother but laggy (0.2-0.5)
+
+Rotation Smooth Time: 0.15
+  - How fast camera rotates to follow car
+  - 0.15 = Forza Horizon sweet spot
+
+SPEED-BASED CAMERA:
+------------------
+Use FOV Zoom: TRUE (recommended)
+  - TRUE = Changes field of view (Forza default)
+  - FALSE = Moves camera distance
+
+Min FOV: 60 (at low speeds)
+Max FOV: 75 (at high speeds ~180 km/h)
+  - Forza Horizon uses subtle FOV changes
+  - Don't go too extreme (causes motion sickness)
+
+Max Speed For Zoom: 50 m/s (~180 km/h)
+  - Speed where max FOV/distance is reached
+
+DYNAMIC HEIGHT:
+--------------
+Use Dynamic Height: TRUE ?
+  - Camera rises at speed for better view
+  - Very Forza Horizon!
+
+Speed Height Bonus: 1.2
+  - How much higher camera goes at max speed
+  - 1.2 = subtle rise (recommended)
+  - 2.0+ = dramatic rise
+
+Height Smooth Time: 0.4
+  - Smoothness of height transitions
+  - Higher = gentler (more cinematic)
+
+LOOK-AHEAD:
+----------
+Use Look Ahead: TRUE ?
+  - Camera looks where you're going (Forza trademark!)
+  
+Look Ahead Amount: 0.3
+  - 0.0 = No look-ahead
+  - 0.3 = Forza Horizon default (subtle)
+  - 0.5+ = Aggressive (racing feel)
+
+Look Ahead Smooth Time: 0.25
+  - How smooth the look-ahead is
+
+CORNER TILT:
+-----------
+Use Corner Tilt: TRUE ?
+  - Camera banks during turns (cinematic!)
+  - Makes it feel like Forza Horizon
+
+Max Tilt Angle: 8°
+  - Maximum bank angle
+  - 5-8° = subtle and realistic
+  - 10-15° = dramatic (arcade)
+
+Tilt Smooth Time: 0.2
+  - Smoothness of tilt transitions
+  - 0.2 = responsive Forza feel
+
+DRIFT CAMERA EFFECTS:
+--------------------
+Use Drift Effects: TRUE ?
+  - Special camera behavior when drifting!
+  
+Drift FOV Bonus: 5°
+  - Extra FOV during drift (dramatic!)
+  
+Drift Distance Bonus: 1.5
+  - Camera pulls back to show drift
+  
+Drift Threshold: 3 m/s
+  - Sideways speed to trigger drift camera
+  - Lower = triggers easier
+
+COLLISION AVOIDANCE:
+-------------------
+Use Collision Avoidance: TRUE
+  - Prevents camera from going through walls
+  
+Collision Layers: Everything (default)
+  - What the camera checks for collisions
+  - Exclude UI, Triggers, etc.
+
+Collision Padding: 0.3
+  - Safety distance from walls
+
+MANUAL LOOK:
+-----------
+Allow Manual Look: TRUE
+  - Hold right mouse to look around
+  
+Require Mouse Button: TRUE
+Mouse Button: 1 (right mouse)
+Look Sensitivity: 2.5
+
+Pitch Min/Max: -25° to 40°
+  - Vertical look limits
+
+Recenter Delay: 1.0s
+  - How long before camera recenters
+  
+Recenter Smooth Time: 0.3s
+  - Smoothness of recenter
+
+TUNING GUIDE:
+=============
+
+FOR MORE CINEMATIC FEEL (like Forza Horizon 5):
+-----------------------------------------------
+- Increase Corner Tilt to 10-12°
+- Increase Look Ahead Amount to 0.4-0.5
+- Increase Dynamic Height to 1.5-2.0
+- Increase Drift FOV Bonus to 8-10°
+
+FOR MORE SIMULATION FEEL (like Forza Motorsport):
+-------------------------------------------------
+- Decrease Corner Tilt to 3-5°
+- Decrease Look Ahead Amount to 0.1-0.2
+- Disable Dynamic Height
+- Decrease Drift FOV Bonus to 2-3°
+
+FOR SMOOTHER CAMERA (less reactive):
+-----------------------------------
+- Increase Position Smooth Time to 0.2-0.3
+- Increase Rotation Smooth Time to 0.25-0.35
+- Increase all other Smooth Time values by 50%
+
+FOR SNAPPIER CAMERA (more reactive):
+-----------------------------------
+- Decrease Position Smooth Time to 0.08-0.10
+- Decrease Rotation Smooth Time to 0.10-0.12
+- Decrease all other Smooth Time values by 30%
+
+TROUBLESHOOTING:
+===============
+
+Camera feels too slow:
+- Decrease Position/Rotation Smooth Time
+- Decrease all Smooth Time values
+
+Camera is too shaky:
+- Increase Position/Rotation Smooth Time
+- Decrease Look Ahead Amount
+- Decrease Corner Tilt
+
+Camera clips through walls:
+- Enable Collision Avoidance
+- Increase Collision Padding
+- Set Collision Layers properly
+
+Drift camera too aggressive:
+- Decrease Drift FOV Bonus
+- Decrease Drift Distance Bonus
+- Increase Drift Threshold
+
+Camera doesn't tilt in corners:
+- Enable Use Corner Tilt
+- Increase Max Tilt Angle
+- Make sure car has angular velocity (check Rigidbody)
+
+FOV changes are too extreme:
+- Reduce difference between Min FOV and Max FOV
+- Increase Zoom Smooth Time for gentler transitions
+- Disable Drift FOV Bonus if too much
+
+FORZA HORIZON PRESETS:
+======================
+
+HORIZON 5 STYLE (Cinematic):
+---------------------------
+Position Smooth: 0.12
+Rotation Smooth: 0.15
+Min FOV: 60, Max FOV: 75
+Dynamic Height: TRUE (1.2)
+Look Ahead: TRUE (0.35)
+Corner Tilt: TRUE (8°)
+Drift Effects: TRUE (5° FOV, 1.5 distance)
+
+HORIZON 4 STYLE (Balanced):
+---------------------------
+Position Smooth: 0.15
+Rotation Smooth: 0.18
+Min FOV: 58, Max FOV: 72
+Dynamic Height: TRUE (1.0)
+Look Ahead: TRUE (0.3)
+Corner Tilt: TRUE (6°)
+Drift Effects: TRUE (4° FOV, 1.2 distance)
+
+MOTORSPORT STYLE (Realistic):
+-----------------------------
+Position Smooth: 0.18
+Rotation Smooth: 0.20
+Min FOV: 60, Max FOV: 65
+Dynamic Height: FALSE
+Look Ahead: TRUE (0.15)
+Corner Tilt: TRUE (4°)
+Drift Effects: FALSE
+
+ADVANCED TIPS:
+==============
+
+1. COMBINE WITH CAR CONTROLLER:
+   The camera detects drifts automatically by reading:
+   - Rigidbody velocity (sideways speed)
+   - This works perfectly with your CarMovement script!
+
+2. LAYER SETUP:
+   Create a "CameraCollision" layer for walls/environment
+   Set Collision Layers to only check that layer
+   This prevents camera from detecting car itself
+
+3. GIZMOS:
+   In Scene view, select camera to see:
+   - Yellow sphere = Base offset position
+   - Cyan sphere = Look-ahead target
+   - Useful for debugging camera placement!
+
+4. MULTIPLE CAMERAS:
+   You can have different camera profiles:
+   - Chase camera (current setup)
+   - Hood camera (closer, lower)
+   - Drift camera (wider FOV preset)
+   Just swap the CarCameraController settings!
+
+CONTROLS:
+=========
+- Right Mouse Button (hold) = Look around
+- Release mouse = Auto-recenter after 1 second
+- Camera automatically follows car smoothly
+- All Forza-style effects are automatic!
+
+COMPARISON TO OLD CAMERA:
+=========================
+OLD:
+- Basic follow with offset
+- Simple speed zoom
+- Manual look only
+
+NEW (FORZA HORIZON STYLE):
+? Dynamic height based on speed
+? Look-ahead prediction
+? Cinematic corner tilt
+? Special drift camera effects
+? Collision avoidance
+? Smooth, polished feel
+? All the Forza magic!
+
+Enjoy your cinematic Forza Horizon camera experience! ????

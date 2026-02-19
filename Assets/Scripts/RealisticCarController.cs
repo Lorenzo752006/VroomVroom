@@ -20,7 +20,20 @@ public class RealisticCarController : MonoBehaviour
 
     [Header("Bone Fixes")]
     // If your wheels are rotated wrong, try (0, 90, 0) or (0, 0, 90)
-    public Vector3 wheelRotationOffset; 
+    public Vector3 wheelRotationOffset;
+
+    [Header("Deceleration Settings")]
+    [Tooltip("Engine braking multiplier when coasting (0 = none, 5 = very strong)")]
+    [Range(0f, 5f)]
+    public float engineBrakeMultiplier = 4.0f;
+
+    [Tooltip("Air resistance coefficient when coasting (0 = none, 2 = very strong)")]
+    [Range(0f, 3f)]
+    public float airResistanceCoefficient = 0.8f;
+
+    [Tooltip("Minimum speed (km/h) before air resistance applies")]
+    [Range(0f, 20f)]
+    public float airResistanceMinSpeed = 5f;
 
     private Rigidbody _rb;
     private float _currentSteerAngle;
@@ -121,10 +134,10 @@ public class RealisticCarController : MonoBehaviour
 
     private void FixedUpdate()
     {
-        HandleMotor();
+        ApplyTireLoadSensitivity(); // Apply base friction FIRST
+        HandleMotor();              // Then apply motor/brake/handbrake (can override friction)
         HandleSteering();
         ApplyDownforce();
-        ApplyTireLoadSensitivity();
         // Anti-roll disabled - was causing car to fly
         // ApplyAntiRoll(frontLeftCollider, frontRightCollider);
         // ApplyAntiRoll(rearLeftCollider, rearRightCollider);
@@ -135,6 +148,10 @@ public class RealisticCarController : MonoBehaviour
     {
         float moveInput = Input.GetAxis("Vertical");
         float currentSpeed = _rb.linearVelocity.magnitude * 3.6f;
+        
+        // Check if moving backwards
+        bool isMovingBackward = Vector3.Dot(_rb.linearVelocity, transform.forward) < 0;
+        float actualSpeed = isMovingBackward ? -currentSpeed : currentSpeed;
 
         // Calculate RPM based on vehicle speed (more stable than wheel RPM)
         float speedMps = _rb.linearVelocity.magnitude;
@@ -149,9 +166,38 @@ public class RealisticCarController : MonoBehaviour
         // Calculate torque with curve
         float torqueMultiplier = GetTorqueMultiplier(_currentRPM);
         
-        if (currentSpeed < carData.maxSpeed && moveInput > 0.01f)
+        // Handle forward and reverse
+        if (moveInput > 0.01f)
         {
-            _currentAcceleration = moveInput * carData.maxMotorTorque * torqueMultiplier;
+            // Forward acceleration
+            if (currentSpeed < carData.maxSpeed)
+            {
+                _currentAcceleration = moveInput * carData.maxMotorTorque * torqueMultiplier;
+                
+                // Extra boost for low gears (arcade feel)
+                if (_currentGear <= 2)
+                {
+                    _currentAcceleration *= 1.3f;
+                }
+            }
+            else
+            {
+                _currentAcceleration = 0;
+            }
+        }
+        else if (moveInput < -0.01f)
+        {
+            // Reverse
+            if (currentSpeed < 5f || isMovingBackward)
+            {
+                // Allow reverse if slow or already reversing
+                _currentAcceleration = moveInput * carData.maxMotorTorque * 0.5f;
+            }
+            else
+            {
+                // Apply brakes if moving forward and trying to reverse
+                _currentAcceleration = 0;
+            }
         }
         else
         {
@@ -162,13 +208,28 @@ public class RealisticCarController : MonoBehaviour
         bool isBraking = Input.GetKey(KeyCode.Space);
         bool isHandbrake = Input.GetKey(KeyCode.LeftShift);
         
-        _currentBrakeForce = isBraking ? carData.brakePower : 0f;
+        // Auto-brake when pressing opposite direction
+        if (moveInput < -0.01f && !isMovingBackward && currentSpeed > 5f)
+        {
+            _currentBrakeForce = carData.brakePower * 1.5f;
+        }
+        else
+        {
+            _currentBrakeForce = isBraking ? carData.brakePower : 0f;
+        }
         
         // Engine braking when off throttle
         float engineBrake = 0f;
-        if (moveInput < 0.01f && currentSpeed > 1f && !isBraking)
+        if (Mathf.Abs(moveInput) < 0.01f && currentSpeed > 1f && !isBraking)
         {
-            engineBrake = carData.engineBrakePower;
+            engineBrake = carData.engineBrakePower * engineBrakeMultiplier;
+            
+            // Add speed-dependent air resistance when coasting
+            if (currentSpeed > airResistanceMinSpeed)
+            {
+                float airResistance = currentSpeed * currentSpeed * airResistanceCoefficient;
+                _rb.AddForce(-_rb.linearVelocity.normalized * airResistance, ForceMode.Force);
+            }
         }
 
         // Cut motor torque when handbrake is active
@@ -214,6 +275,7 @@ public class RealisticCarController : MonoBehaviour
         float rearBrake = (_currentBrakeForce * (1f - carData.brakeFrontBias)) + engineBrake;
         
         // Handbrake only on rear wheels - reduce sideways friction for drift
+        // IMPORTANT: This must happen AFTER ApplyTireLoadSensitivity to not be overwritten
         if (isHandbrake)
         {
             rearBrake += carData.handBrakePower;
@@ -223,16 +285,6 @@ public class RealisticCarController : MonoBehaviour
             WheelFrictionCurve rearRightSideways = rearRightCollider.sidewaysFriction;
             rearLeftSideways.stiffness = carData.sidewaysFrictionStiffness * 0.3f;
             rearRightSideways.stiffness = carData.sidewaysFrictionStiffness * 0.3f;
-            rearLeftCollider.sidewaysFriction = rearLeftSideways;
-            rearRightCollider.sidewaysFriction = rearRightSideways;
-        }
-        else
-        {
-            // Restore friction when handbrake released
-            WheelFrictionCurve rearLeftSideways = rearLeftCollider.sidewaysFriction;
-            WheelFrictionCurve rearRightSideways = rearRightCollider.sidewaysFriction;
-            rearLeftSideways.stiffness = carData.sidewaysFrictionStiffness;
-            rearRightSideways.stiffness = carData.sidewaysFrictionStiffness;
             rearLeftCollider.sidewaysFriction = rearLeftSideways;
             rearRightCollider.sidewaysFriction = rearRightSideways;
         }
@@ -251,9 +303,32 @@ public class RealisticCarController : MonoBehaviour
         if (carData.useSpeedSensitiveSteering)
         {
             float speedKmh = _rb.linearVelocity.magnitude * 3.6f;
-            float speedFactor = Mathf.InverseLerp(0f, carData.maxSpeed, speedKmh);
-            steerScale = Mathf.Lerp(1f, Mathf.Clamp01(carData.steerAtMaxSpeed), speedFactor);
-            steerScale = Mathf.Max(steerScale, Mathf.Clamp01(carData.minSteerScale));
+            
+            // More aggressive speed-sensitive steering curve with better high-speed control
+            if (speedKmh < 30f)
+            {
+                // Full steering at low speeds
+                steerScale = 1f;
+            }
+            else if (speedKmh < 100f)
+            {
+                // Gradual reduction in mid speeds
+                float midSpeedFactor = Mathf.InverseLerp(30f, 100f, speedKmh);
+                steerScale = Mathf.Lerp(1f, 0.6f, midSpeedFactor);
+            }
+            else if (speedKmh < 200f)
+            {
+                // Further reduction at high speeds
+                float highSpeedFactor = Mathf.InverseLerp(100f, 200f, speedKmh);
+                steerScale = Mathf.Lerp(0.6f, 0.4f, highSpeedFactor);
+            }
+            else
+            {
+                // Very gentle steering at extreme speeds
+                float extremeSpeedFactor = Mathf.InverseLerp(200f, carData.maxSpeed, speedKmh);
+                steerScale = Mathf.Lerp(0.4f, Mathf.Clamp01(carData.steerAtMaxSpeed), extremeSpeedFactor);
+                steerScale = Mathf.Max(steerScale, Mathf.Clamp01(carData.minSteerScale));
+            }
         }
 
         _currentSteerAngle = carData.maxSteeringAngle * steerInput * steerScale;
@@ -302,9 +377,10 @@ public class RealisticCarController : MonoBehaviour
         if (wheel.GetGroundHit(out hit))
         {
             float slip = Mathf.Max(Mathf.Abs(hit.forwardSlip), Mathf.Abs(hit.sidewaysSlip));
-            float slipFactor = Mathf.InverseLerp(0.2f, 0.8f, slip);
+            // More aggressive traction control with tighter slip range
+            float slipFactor = Mathf.InverseLerp(0.15f, 0.6f, slip);
             float tc = Mathf.Clamp01(carData.tractionControl);
-            torque *= Mathf.Lerp(1f, 1f - tc, slipFactor);
+            torque *= Mathf.Lerp(1f, 1f - tc * 0.8f, slipFactor);
         }
 
         return torque;
@@ -318,8 +394,13 @@ public class RealisticCarController : MonoBehaviour
         }
 
         float speed = _rb.linearVelocity.magnitude;
-        float downforceAmount = carData.downforce * speed * speed * 0.01f;
-        _rb.AddForce(-transform.up * downforceAmount, ForceMode.Force);
+        
+        // Balanced downforce - less aggressive base, more gradual scaling
+        float baseDownforce = carData.downforce * 0.5f;
+        float speedDownforce = carData.downforce * speed * speed * 0.015f;
+        float totalDownforce = baseDownforce + speedDownforce;
+        
+        _rb.AddForce(-transform.up * totalDownforce, ForceMode.Force);
     }
 
     private void ApplyAntiRoll(WheelCollider leftWheel, WheelCollider rightWheel)
@@ -459,8 +540,8 @@ public class RealisticCarController : MonoBehaviour
             
             if (loadRatio < 1f)
             {
-                // Under optimal load: linear increase
-                gripMultiplier = Mathf.Lerp(0.7f, 1f, loadRatio);
+                // Under optimal load: gentler reduction to prevent low-speed instability
+                gripMultiplier = Mathf.Lerp(0.85f, 1f, loadRatio);
             }
             else
             {

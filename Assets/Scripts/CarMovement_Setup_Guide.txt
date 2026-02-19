@@ -1,0 +1,151 @@
+FORZA HORIZON STYLE CAR CONTROLLER - SETUP GUIDE
+================================================
+
+The CarMovement script is now a fully-featured Forza Horizon-style car controller!
+
+SETUP INSTRUCTIONS:
+==================
+
+1. ADD THE SCRIPT TO YOUR CAR:
+   - Select your Ferrari car GameObject in the hierarchy
+   - Add the CarMovement component (if not already attached)
+
+2. ASSIGN REFERENCES IN INSPECTOR:
+   
+   Car Configuration:
+   - Drag your "Ferrari_Data" asset to the "Car Data" field
+   
+   Wheel Colliders (Physics):
+   - Assign Front Left, Front Right, Rear Left, Rear Right WheelColliders
+   
+   Wheel Bones (Visuals):
+   - Assign the visual wheel meshes (transforms) for all 4 wheels
+   
+   Visual Settings:
+   - If wheels rotate wrong, adjust "Wheel Rotation Offset" (try 0,90,0 or 0,0,90)
+
+3. ADJUST FORZA-STYLE SETTINGS (Optional):
+   
+   Acceleration Boost (1-3):
+   - 1.0 = Realistic simulation
+   - 1.6 = Forza Horizon feel (DEFAULT)
+   - 2.5+ = Pure arcade
+   
+   Stability Assist (0-1):
+   - 0.0 = No assistance (hardcore sim)
+   - 0.5 = Forza Horizon balance (DEFAULT)
+   - 1.0 = Maximum stability (easy mode)
+   
+   Counter Steer Assist (0-1):
+   - Helps prevent spinning during slides
+   - 0.35 = DEFAULT (Forza-like)
+   
+   Anti Roll Force (0-10):
+   - Prevents body roll during turns
+   - 5.0 = DEFAULT (balanced)
+   
+   Speed Downforce (0-500):
+   - Adds grip at high speeds
+   - 200 = DEFAULT (good stability)
+   
+   Assisted Braking:
+   - TRUE = Automatic brake when reversing direction (Forza-style)
+   
+   Drift Friction (0.2-0.8):
+   - Lower = easier drifts when handbraking
+   - 0.35 = DEFAULT (fun drifting)
+
+CONTROLS:
+=========
+- W / S (or Up/Down arrows) - Throttle / Brake/Reverse
+- A / D (or Left/Right arrows) - Steering
+- Left Shift - Handbrake (drift mode)
+- Space - (not currently mapped, can add dedicated brake if desired)
+
+FEATURES:
+=========
+? Realistic RPM simulation with torque curve
+? Automatic transmission (7-speed for Ferrari)
+? Speed-sensitive steering (Forza Horizon style)
+? Stability control (prevents spinning out)
+? Counter-steering assist (helps during drifts)
+? Traction control (progressive and subtle)
+? Anti-roll bars (reduces body roll)
+? Progressive downforce (grip at speed)
+? Handbrake drifting with reduced friction
+? Assisted braking when changing direction
+? RWD power delivery (rear-wheel drive)
+? Visual wheel synchronization
+? **NEW v1.1**: Dynamic friction management
+? **NEW v1.1**: Load-sensitive grip system
+? **NEW v1.1**: Improved high-speed stability (100+ km/h fix)
+
+COMPARISON TO OTHER SCRIPTS:
+============================
+- RealisticCarController = Full simulation (hardcore)
+- ArcadeMovement = Pure arcade (easy/fun)
+- CarMovement (NEW) = Forza Horizon balance (realistic but forgiving)
+
+TUNING YOUR FERRARI:
+===================
+Your Ferrari_Data already has great settings! But you can adjust:
+
+For MORE ARCADE feel:
+- Increase "Acceleration Boost" to 2.0-2.5
+- Increase "Stability Assist" to 0.7-0.9
+- Increase "Speed Downforce" to 300-400
+
+For MORE REALISTIC feel:
+- Decrease "Acceleration Boost" to 1.2-1.4
+- Decrease "Stability Assist" to 0.2-0.3
+- Decrease "Speed Downforce" to 100-150
+
+For EASIER DRIFTING:
+- Decrease "Drift Friction" to 0.25-0.3
+- Decrease "Stability Assist" to 0.2-0.3
+- Increase "Counter Steer Assist" to 0.5-0.6
+
+TROUBLESHOOTING:
+===============
+Car feels too slidey:
+- Increase "Stability Assist"
+- Increase friction in Ferrari_Data (forwardFrictionStiffness, sidewaysFrictionStiffness)
+
+Car loses traction at high speeds (100+ km/h):
+- FIXED in v1.1! Now includes:
+  * Dynamic friction that increases with speed
+  * Improved downforce at medium-high speeds
+  * Load-sensitive grip system
+  * Stronger stability control at 100+ km/h
+- If still an issue, increase "Speed Downforce" to 250-300
+- Increase "Stability Assist" to 0.6-0.7
+
+Car feels too sticky:
+- Decrease grip boost values
+- Decrease downforce
+
+Wheels look wrong:
+- Adjust "Wheel Rotation Offset" (common: 0,90,0 or 0,0,90)
+
+Car accelerates slowly:
+- Increase "Acceleration Boost"
+- Check Ferrari_Data maxMotorTorque (2800 is good)
+
+Can't drift:
+- Make sure handbrake is Left Shift
+- Lower "Drift Friction" value
+- Lower "Stability Assist"
+
+ADVANCED:
+=========
+The script uses your Ferrari_Data for all realistic parameters:
+- Engine torque curve
+- Gear ratios (7 gears)
+- Brake bias
+- Suspension settings
+- Friction values
+- Mass and center of mass
+
+You can fine-tune these in the Ferrari_Data asset!
+
+Enjoy your Forza Horizon-style driving experience!

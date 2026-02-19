@@ -1,0 +1,84 @@
+?? FORZA HORIZON CAMERA - QUICK START
+=====================================
+
+YOUR CAMERA HAS BEEN UPGRADED! ??
+================================
+
+The CarCameraController now has ALL the Forza Horizon camera features:
+
+? WHAT YOU GET (ALL AUTOMATIC):
+================================
+? Dynamic height - Rises at speed for better view
+? Look-ahead - Camera anticipates where you're going
+? Corner tilt - Banks during turns (cinematic!)
+? Drift camera - Special effects when drifting
+? Speed zoom - FOV changes smoothly with speed
+? Collision avoidance - Won't clip through walls
+? Smooth everything - Forza-quality polish
+
+?? WORKS PERFECTLY WITH YOUR CAR:
+================================
+The camera automatically detects:
+- Speed (from your CarMovement script)
+- Drifts (when you hold Left Shift handbrake)
+- Cornering (from car rotation)
+- Direction (from velocity)
+
+No additional setup needed - just works!
+
+?? DEFAULT SETTINGS (ALREADY CONFIGURED):
+=========================================
+All settings are pre-tuned for Forza Horizon 5 style!
+
+You can customize everything in the Inspector:
+- Base Offset: Where camera sits
+- FOV range: 60-75° (Forza default)
+- Dynamic Height: +1.2m at speed
+- Look-Ahead: 30% (subtle)
+- Corner Tilt: 8° max (cinematic)
+- Drift Effects: +5° FOV, +1.5m back
+
+?? RECOMMENDED FIRST TEST:
+==========================
+1. Make sure camera has Target and Target Rigidbody assigned
+2. Drive straight at 100+ km/h
+   ? Camera should rise and FOV should increase
+3. Take a sharp corner
+   ? Camera should tilt/bank smoothly
+4. Press Left Shift to drift
+   ? Camera should pull back with wider FOV
+5. Hold Right Mouse Button
+   ? Look around, then auto-recenter
+
+??? QUICK TWEAKS (IF NEEDED):
+============================
+
+Camera too slow?
+? Decrease "Position Smooth Time" (try 0.08)
+? Decrease "Rotation Smooth Time" (try 0.10)
+
+Camera too twitchy?
+? Increase smooth times (try 0.20-0.25)
+
+Want more dramatic feel?
+? Increase "Max Tilt Angle" to 10-12°
+? Increase "Look Ahead Amount" to 0.4-0.5
+? Increase "Drift FOV Bonus" to 8-10°
+
+Want more realistic feel?
+? Decrease "Max Tilt Angle" to 4-5°
+? Decrease "Look Ahead Amount" to 0.15-0.2
+? Disable "Use Dynamic Height"
+
+?? FULL DOCUMENTATION:
+=====================
+See "ForzaCamera_Setup_Guide.txt" for complete settings
+See "ForzaCamera_Technical_Details.txt" for how it works
+
+?? CONTROLS:
+============
+- Right Mouse (hold) = Look around
+- Release = Auto-recenter after 1 second
+- Everything else is automatic!
+
+That's it! Drive and enjoy the Forza Horizon camera experience! ?????

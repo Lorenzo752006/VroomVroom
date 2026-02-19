@@ -1,0 +1,89 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9681737e78158ed4a82636e0f9b7c7aa, type: 3}
+  m_Name: Ferrari_Data
+  m_EditorClassIdentifier: Assembly-CSharp::CarData
+  maxMotorTorque: 2800
+  maxSpeed: 350
+  brakePower: 3500
+  brakeFrontBias: 0.7
+  engineBrakePower: 400
+  handBrakePower: 5000
+  minRPM: 1200
+  maxRPM: 9250
+  peakTorqueRPM: 6750
+  torqueCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0.65
+      inSlope: 1.5
+      outSlope: 1.5
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0.33
+    - serializedVersion: 3
+      time: 0.7
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33
+      outWeight: 0.33
+    - serializedVersion: 3
+      time: 1
+      value: 0.85
+      inSlope: -0.5
+      outSlope: -0.5
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  gearCount: 7
+  gearRatios:
+  - 4.5
+  - 3.0
+  - 2.2
+  - 1.7
+  - 1.35
+  - 1.1
+  - 0.88
+  finalDriveRatio: 3.2
+  shiftUpRPM: 8800
+  shiftDownRPM: 2500
+  maxSteeringAngle: 26
+  tractionControl: 0.75
+  tractionControlMinKph: 20
+  wheelRadius: 0.36
+  differentialLockRatio: 0.65
+  differentialSlipThreshold: 100
+  enableLoadSensitivity: 1
+  loadSensitivityFactor: 0.4
+  optimalLoad: 4200
+  steerAtMaxSpeed: 0.8
+  useSpeedSensitiveSteering: 1
+  minSteerScale: 0.75
+  downforce: 250
+  antiRollStiffness: 0
+  forwardFrictionStiffness: 1.8
+  sidewaysFrictionStiffness: 2.3
+  suspensionDistance: 0.18
+  suspensionSpring: 42000
+  suspensionDamper: 5500
+  mass: 1255
+  centerOfMassOffset: {x: 0, y: -0.25, z: 0.1}
